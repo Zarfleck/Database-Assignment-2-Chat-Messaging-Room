@@ -1,0 +1,270 @@
+<%- include("templates/header") %>
+<!-- <script src="room.js"></script> -->
+ <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        document.body.addEventListener('click', async (event) => {
+            const button = event.target.closest("#emoji-button");
+            if (!button) return; // Exit if the clicked element isn't an emoji button
+
+            const messageId = button.getAttribute('data-message-id');
+            const emojiId = button.getAttribute('data-emoji-id');
+            const reacted = button.getAttribute('data-reacted') === 'true';
+
+            try {
+                const response = await fetch('/react', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message_id: messageId, emoji_id: emojiId, remove: reacted })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const countSpan = button.querySelector('span');
+                    let count = parseInt(countSpan.textContent);
+
+                    if (reacted) {
+                        count--;
+                        button.classList.remove('bg-blue-600');
+                        button.classList.add('bg-blue-500');
+                    } else {
+                        count++;
+                        button.classList.remove('bg-blue-500');
+                        button.classList.add('bg-blue-600');
+                    }
+
+                    countSpan.textContent = count;
+                    button.setAttribute('data-reacted', (!reacted).toString());
+                } else {
+                    alert(data.message || "Failed to react.");
+                }
+            } catch (err) {
+                console.error("Error reacting to message:", err);
+            }
+        });
+    });
+ </script>
+
+<body class="flex flex-col bg-teal-500">
+    <div class="flex flex-row mx-20 rounded-lg mt-10 justify-between">
+        <div class="bg-green-400 p-2 rounded-md shadow-md shadow-black my-4 text-lg justify-center">
+            <button class="py-1">
+                <a href="/">Back to Rooms</a>
+            </button>
+        </div>
+        <div class="flex bg-blue-400 p-2 rounded-md shadow-md shadow-black my-4 w-1/2 justify-center text-2xl font-bold ml-12">
+            <%= room_name %>
+        </div>
+        <div class="bg-yellow-400 p-2 rounded-md shadow-md shadow-black my-4 text-lg justify-center">
+            <button class="py-1">
+                <a href="/addUsersToCurrentRoom">Invite Users</a>
+            </button>
+        </div>
+    </div>
+    <div class="chat-container">    
+        <!-- Message Display -->
+        <div id="messages" class="flex flex-col bg-orange-600 py-4 px-2 mx-20 rounded-lg mt-16 overflow-y-auto max-h-96 shadow-md shadow-black">
+            <% var toggle = false; %>
+            <% messages.forEach(msg => { %>                    
+                <% let messageDateTime = msg.sent_datetime.toISOString().slice(0, 19).replace('T', ' '); %>
+
+                <% if(msg.message_id <= last_read_message) {%>
+                    <% if(msg.user_id == auth_user_id) {%>
+                        <div class="flex flex-col place-items-end">
+                            <div class="flex flex-col bg-green-400 p-2 rounded-md shadow-md shadow-black mx-4 mt-4 mb-2 w-1/2">
+                                <p><strong><%= msg.username %>:</strong> <%= msg.text %></p>
+                                <p class="text-xs"><%= messageDateTime %></p>
+                            </div>
+
+                            <div class="flex flex-row space-x-2 place-self-center ml-40">
+                                <% 
+                                // Define all possible emoji options
+                                const emojiOptions = [
+                                    { id: 1, image: 'thumbsup.png' },
+                                    { id: 2, image: '100.png' },
+                                    { id: 3, image: 'happy.png' }
+                                ];
+                            
+                                // Group reactions for this specific message
+                                const groupedReactions = {};
+                                messageEmojiReactions
+                                    .filter(reaction => reaction.message_id === msg.message_id)
+                                    .forEach(reaction => {
+                                        groupedReactions[reaction.emoji_id] = groupedReactions[reaction.emoji_id] || { count: 0, userIds: [] };
+                                        groupedReactions[reaction.emoji_id].count++;
+                                        groupedReactions[reaction.emoji_id].userIds.push(reaction.user_id);
+                                    });
+                            
+                                emojiOptions.forEach(emoji => {
+                                    const reaction = groupedReactions[emoji.id] || { count: 0, userIds: [] };
+                                    const userReacted = reaction.userIds.includes(auth_user_id);
+                                %>
+                                    <button 
+                                        id="emoji-button"
+                                        class="emoji-button p-2 rounded hover:bg-blue-600 <%= userReacted ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white' %>" 
+                                        data-message-id="<%= msg.message_id %>" 
+                                        data-emoji-id="<%= emoji.id %>" 
+                                        data-reacted="<%= userReacted %>">
+                                        <img src="/<%= emoji.image %>" class="w-6 h-6 inline">
+                                        <span><%= reaction.count %></span>
+                                    </button>
+                                <% }); %>
+                            </div> 
+                        </div>
+                    <% }else { %>
+                        <div>
+                            <div class="flex flex-col bg-cyan-300 p-2 rounded-md shadow-md shadow-black m-2 w-1/2">
+                                <p><strong><%= msg.username %>:</strong> <%= msg.text %></p>
+                                <p class="text-xs"><%= messageDateTime %></p>
+                            </div>
+
+
+                            <div class="flex flex-row space-x-2 mt-2 ml-4">
+                                <% 
+                                // Define all possible emoji options
+                                const emojiOptions = [
+                                    { id: 1, image: 'thumbsup.png' },
+                                    { id: 2, image: '100.png' },
+                                    { id: 3, image: 'happy.png' }
+                                ];
+                            
+                                // Group reactions for this specific message
+                                const groupedReactions = {};
+                                messageEmojiReactions
+                                    .filter(reaction => reaction.message_id === msg.message_id)
+                                    .forEach(reaction => {
+                                        groupedReactions[reaction.emoji_id] = groupedReactions[reaction.emoji_id] || { count: 0, userIds: [] };
+                                        groupedReactions[reaction.emoji_id].count++;
+                                        groupedReactions[reaction.emoji_id].userIds.push(reaction.user_id);
+                                    });
+                            
+                                emojiOptions.forEach(emoji => {
+                                    const reaction = groupedReactions[emoji.id] || { count: 0, userIds: [] };
+                                    const userReacted = reaction.userIds.includes(auth_user_id);
+                                %>
+                                    <button
+                                        id="emoji-button"
+                                        class="emoji-button p-2 rounded hover:bg-blue-600 <%= userReacted ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white' %>" 
+                                        data-message-id="<%= msg.message_id %>" 
+                                        data-emoji-id="<%= emoji.id %>" 
+                                        data-reacted="<%= userReacted %>">
+                                        <img src="/<%= emoji.image %>" class="w-6 h-6 inline">
+                                        <span><%= reaction.count %></span>
+                                    </button>
+                                <% }); %>
+                            </div>
+                        </div>
+                    <% } %>
+
+                <% } else { %>
+                    <% if(toggle == false && msg.user_id != auth_user_id) { %>
+                        <div class="flex flex-col bg-red-400 p-2 rounded-md shadow-md shadow-black m-2 w-1/2 self-center">
+                            <p><strong>------------------Unread Messages-----------------</strong></p>
+                        </div>
+                        <% toggle = true; %>
+                    <% } %>
+
+                    <% if(msg.user_id == auth_user_id) {%>
+                        <div class="flex flex-col place-items-end">
+                            <div class="flex flex-col bg-green-400 p-2 rounded-md shadow-md shadow-black mx-4 mt-4 mb-2 w-1/2">
+                                <p><strong><%= msg.username %>:</strong> <%= msg.text %></p>
+                                <p class="text-xs"><%= messageDateTime %></p>
+                            </div>
+
+                            <div class="flex flex-row space-x-2 place-self-center ml-40">
+                                <% 
+                                // Define all possible emoji options
+                                const emojiOptions = [
+                                    { id: 1, image: 'thumbsup.png' },
+                                    { id: 2, image: '100.png' },
+                                    { id: 3, image: 'happy.png' }
+                                ];
+                            
+                                // Group reactions for this specific message
+                                const groupedReactions = {};
+                                messageEmojiReactions
+                                    .filter(reaction => reaction.message_id === msg.message_id)
+                                    .forEach(reaction => {
+                                        groupedReactions[reaction.emoji_id] = groupedReactions[reaction.emoji_id] || { count: 0, userIds: [] };
+                                        groupedReactions[reaction.emoji_id].count++;
+                                        groupedReactions[reaction.emoji_id].userIds.push(reaction.user_id);
+                                    });
+                            
+                                emojiOptions.forEach(emoji => {
+                                    const reaction = groupedReactions[emoji.id] || { count: 0, userIds: [] };
+                                    const userReacted = reaction.userIds.includes(auth_user_id);
+                                %>
+                                    <button 
+                                        id="emoji-button"
+                                        class="emoji-button p-2 rounded hover:bg-blue-600 <%= userReacted ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white' %>" 
+                                        data-message-id="<%= msg.message_id %>" 
+                                        data-emoji-id="<%= emoji.id %>" 
+                                        data-reacted="<%= userReacted %>">
+                                        <img src="/<%= emoji.image %>" class="w-6 h-6 inline">
+                                        <span><%= reaction.count %></span>
+                                    </button>
+                                <% }); %>
+                            </div> 
+                        </div>
+                    <% }else { %>
+                        <div>
+                            <div class="flex flex-col bg-cyan-300 p-2 rounded-md shadow-md shadow-black m-2 w-1/2">
+                                <p><strong><%= msg.username %>:</strong> <%= msg.text %></p>
+                                <p class="text-xs"><%= messageDateTime %></p>
+                            </div>
+
+
+                            <div class="flex flex-row space-x-2 mt-2 ml-10">
+                                <% 
+                                // Define all possible emoji options
+                                const emojiOptions = [
+                                    { id: 1, image: 'thumbsup.png' },
+                                    { id: 2, image: '100.png' },
+                                    { id: 3, image: 'happy.png' }
+                                ];
+                            
+                                // Group reactions for this specific message
+                                const groupedReactions = {};
+                                messageEmojiReactions
+                                    .filter(reaction => reaction.message_id === msg.message_id)
+                                    .forEach(reaction => {
+                                        groupedReactions[reaction.emoji_id] = groupedReactions[reaction.emoji_id] || { count: 0, userIds: [] };
+                                        groupedReactions[reaction.emoji_id].count++;
+                                        groupedReactions[reaction.emoji_id].userIds.push(reaction.user_id);
+                                    });
+                            
+                                emojiOptions.forEach(emoji => {
+                                    const reaction = groupedReactions[emoji.id] || { count: 0, userIds: [] };
+                                    const userReacted = reaction.userIds.includes(auth_user_id);
+                                %>
+                                    <button 
+                                        id="emoji-button"
+                                        class="emoji-button p-2 rounded hover:bg-blue-600 <%= userReacted ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white' %>" 
+                                        data-message-id="<%= msg.message_id %>" 
+                                        data-emoji-id="<%= emoji.id %>" 
+                                        data-reacted="<%= userReacted %>">
+                                        <img src="/<%= emoji.image %>" class="w-6 h-6 inline">
+                                        <span><%= reaction.count %></span>
+                                    </button>
+                                <% }); %>
+                            </div>
+                        </div>
+
+                    <% }; %>
+                <% }; %>
+            <% }); %>
+        </div>
+        
+        <!-- Message Form -->
+    </div>
+    <div class="mt-6">
+        <form action="/sendMessage" method="POST" id="message-form" class="flex justify-center self-end space-x-16">
+            <input type="text" name="message" placeholder="Type a message..." required class="bg-cyan-200 p-2 rounded-md shadow-md shadow-black m-4 space-x-4 w-1/2">
+            <button type="submit" class="bg-green-400 p-2 rounded-md shadow-md shadow-black m-4 space-x-4">Send</button>
+        </form>
+    </div>
+</body>
+
+
+
+<%- include("templates/footer") %>

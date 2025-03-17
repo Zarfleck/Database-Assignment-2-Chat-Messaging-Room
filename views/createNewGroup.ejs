@@ -1,0 +1,20 @@
+<%- include("templates/header") %>
+<body class="bg-teal-500">
+    <div class="flex justify-center">
+        <div class="bg-green-400 p-2 rounded-md shadow-md shadow-black mt-24">
+            <form action="/createNewGroup" method="post" class="flex-col">
+                Group Name:
+                <input class="border-2 flex mb-4" type="text" name="group_name" required />
+                <input class="border border-black bg-white p-1 bg-yellow-400 rounded-lg shadow-black shadow-sm" type="submit" value="Create Group" />
+                <% all_users.forEach(user => { %>
+                    <div class="flex flex-row bg-orange-400 my-4 p-2 rounded-md shadow-sm shadow-black">
+                        <input type="checkbox" id="user<%= user.user_id %>" name="users" value="<%= user.user_id %>">
+                        <label for="user<%= user.user_id %>"><%= user.username %></label><br>
+                    </div>
+                <% }); %>
+            </form>
+        </div>
+    </div>
+</body>
+
+<%- include("templates/footer") %>

@@ -1,0 +1,27 @@
+<%- include("templates/header") %>
+<body class="bg-teal-500">
+    <% if(authenticated == true) { %>
+        <div class="flex justify-center mt-24">
+            <div class="flex-col mx-2 bg-green-400 p-2 rounded-md shadow-md shadow-black">
+                Hello, <%= username %>
+                <% for (let room of users_rooms) { %>
+                    <button class="flex mt-4 mb-2 p-1 border border-black bg-white rounded-lg shadow-black shadow-sm">
+                        <a href="/room/<%= room.room_id %>"><%= room.name %></a>
+                    </button>
+                <% } %>
+                <div class="flex p-1 border border-black bg-blue-400 rounded-lg shadow-black shadow-sm mb-2">Number of rooms: <%= users_rooms.length %></div>
+                <button class="flex p-1 border border-black bg-yellow-400 rounded-lg shadow-black shadow-sm mb-2"><a href="/createNewGroup">Create New Group</a></button>
+                <button class="flex p-1 border border-black bg-red-400 rounded-lg shadow-black shadow-sm"><a href="/logout">Logout</a></button>
+            </div>
+        </div>
+        
+    <% }else { %>
+        <div class="flex justify-center mt-24">
+            <div class="flex-col bg-green-200 p-4 rounded-md shadow-md shadow-black">
+                <button class="flex mb-2 p-1 border border-black bg-white"><a href="/login">Login</a></button>
+                <button class="flex p-1 border border-black bg-white"><a href="/createuser">Sign Up</a></button>
+            </div>
+        </div>
+    <% } %>
+</body>
+<%- include("templates/footer") %>
